@@ -1,0 +1,12 @@
+discord_token: "..."
+
+db_config:
+  name: "postal_pinger"
+  host: localhost
+  port: 5555
+
+  user: "..."
+  pass: "..."
+
+monitoring_interval: 60 # seconds
+export_output_dir: "..."

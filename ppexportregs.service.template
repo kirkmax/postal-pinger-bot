@@ -1,0 +1,13 @@
+[Unit]
+Description=Postal Pinger Registrations Exporter
+After=postgresql.service ppbot.service
+
+[Service]
+User=dev
+Group=dev
+Environment="PYTHONPATH=<bot-path>"
+ExecStart=/usr/bin/python3 -m postal_pinger_bot.tools.monitor_and_export --config-path <bot-path>/config.yml
+SyslogIdentifier=ppexportregs
+
+[Install]
+WantedBy=multi-user.target

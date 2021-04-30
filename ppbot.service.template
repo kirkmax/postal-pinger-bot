@@ -1,0 +1,13 @@
+[Unit]
+Description=Postal Pinger Bot
+After=postgresql.service
+
+[Service]
+User=<username>
+Group=<username>
+Environment="PYTHONPATH=<bot-path>"
+ExecStart=/usr/bin/python3 -m postal_pinger_bot.main --config-path <bot-path>/config.yml
+SyslogIdentifier=ppbot
+
+[Install]
+WantedBy=multi-user.target
