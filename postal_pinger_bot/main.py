@@ -20,6 +20,7 @@ logger.addHandler(logging_console_handler)
 
 # Constants
 DISCORD_MESSAGE_LENGTH_LIMIT = 2000
+DISCORD_MESSAGE_LENGTH_HIGH_WATERMARK = DISCORD_MESSAGE_LENGTH_LIMIT - 500
 
 
 def add_user_to_fsas(user, raw_fsas, conn):
@@ -201,21 +202,22 @@ def main(argv):
             await ctx.channel.send("{} Sorry, you're trying to ping too many area codes at once.".format(ctx.author.mention))
             return
 
-        users = ""
+        message_prefix = "New info for {} is here! Check the pins! ".format(" ".join(sorted([fsa.upper() for fsa in fsas])))
+        message = message_prefix
         found_users_to_ping = False
         with conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT DISTINCT user_id FROM ping_reg WHERE fsa IN %(fsas)s", {"fsas": tuple(fsas)})
                 for row in cur:
                     found_users_to_ping = True
-                    users += "<@{}> ".format(row["user_id"])
-                    if len(users) > DISCORD_MESSAGE_LENGTH_LIMIT - 500:
+                    message += "<@{}> ".format(row["user_id"])
+                    if len(message) > DISCORD_MESSAGE_LENGTH_HIGH_WATERMARK:
                         # Flush the buffer before we reach discord's message length limit
-                        await ctx.channel.send("{} is pinging {}!".format(ctx.author.mention, users))
-                        users = ""
+                        await ctx.channel.send(message)
+                        message = message_prefix
         # Ping any remaining users
-        if "" != users:
-            await ctx.channel.send("{} is pinging {}!".format(ctx.author.mention, users))
+        if len(message) > len(message_prefix):
+            await ctx.channel.send(message)
 
         if not found_users_to_ping:
             await ctx.channel.send("{} No one to ping.".format(ctx.author.mention))
