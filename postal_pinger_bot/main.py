@@ -1,4 +1,4 @@
-from .utils.general import MAX_FSAS_TO_PROCESS_AT_ONCE, db_init, get_unambiguous_username, parse_fsas, parse_username
+from .utils.general import db_init, get_unambiguous_username, parse_fsas, parse_username
 import argparse
 import discord
 from discord.ext import commands
@@ -21,6 +21,8 @@ logger.addHandler(logging_console_handler)
 # Constants
 DISCORD_MESSAGE_LENGTH_LIMIT = 2000
 DISCORD_MESSAGE_LENGTH_HIGH_WATERMARK = DISCORD_MESSAGE_LENGTH_LIMIT - 500
+# NOTE: Each FSA takes at 3 characters + 1 space in the message, so this is meant to be a value that doesn't overwhelm the message with FSAs
+MAX_FSAS_TO_PING_AT_ONCE = 100
 
 
 def add_user_to_fsas(user, raw_fsas, conn):
@@ -198,7 +200,7 @@ def main(argv):
             await ctx.channel.send("{} {}".format(ctx.author.mention, str(ex)))
             return
 
-        if len(fsas) > MAX_FSAS_TO_PROCESS_AT_ONCE:
+        if len(fsas) > MAX_FSAS_TO_PING_AT_ONCE:
             await ctx.channel.send("{} Sorry, you're trying to ping too many area codes at once.".format(ctx.author.mention))
             return
 
