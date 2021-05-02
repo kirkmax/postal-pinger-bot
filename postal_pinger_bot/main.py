@@ -104,7 +104,7 @@ def main(argv):
     # Need the members intent to get users by username
     intents = discord.Intents.default()
     intents.members = True
-    bot = commands.Bot(command_prefix="!pp", intents=intents)
+    bot = commands.Bot(command_prefix="!pp", intents=intents, help_command=None)
 
     @bot.event
     async def on_ready():
