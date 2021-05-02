@@ -1,4 +1,5 @@
 discord_token: "..."
+user_command_channel: "ppbot"
 
 db_config:
   name: "postal_pinger"

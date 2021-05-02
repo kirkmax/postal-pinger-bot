@@ -19,6 +19,7 @@ logging_console_handler.setFormatter(logging_formatter)
 logger.addHandler(logging_console_handler)
 
 # Constants
+COMMAND_PREFIX = "!pp"
 DISCORD_MESSAGE_LENGTH_LIMIT = 2000
 DISCORD_MESSAGE_LENGTH_HIGH_WATERMARK = DISCORD_MESSAGE_LENGTH_LIMIT - 500
 # NOTE: Each FSA takes at 3 characters + 1 space in the message, so this is meant to be a value that doesn't overwhelm the message with FSAs
@@ -100,15 +101,42 @@ def main(argv):
         raise Exception("Unable to parse configuration from {}.".format(config_path))
 
     conn = db_init(config["db_config"])
+    user_command_channel_name = config["user_command_channel"]
 
     # Need the members intent to get users by username
     intents = discord.Intents.default()
     intents.members = True
-    bot = commands.Bot(command_prefix="!pp", intents=intents, help_command=None)
+    bot = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents, help_command=None)
 
     @bot.event
     async def on_ready():
         print(f'{bot.user.name} has connected to Discord!')
+
+    @bot.event
+    async def on_message(message):
+        if message.author == bot.user:
+            # Ignore messages from the bot
+            return
+
+        if user_command_channel_name != message.channel.name:
+            if not message.content.startswith(COMMAND_PREFIX):
+                # Ignore non-command messages
+                return
+
+            if not message.author.permissions_in(message.channel).kick_members:
+                # Ignore commands from non-moderators
+                return
+        else:
+            if not message.content.startswith(COMMAND_PREFIX):
+                # Delete non-command messages
+                try:
+                    await message.delete()
+                except discord.NotFound:
+                    # Message already deleted
+                    pass
+                return
+
+        await bot.process_commands(message)
 
     @bot.command(name="add", help="Add me to pings for the given area (ex: K1P).", usage="area1 area2 ...")
     async def ppadd(ctx, *raw_fsas):
@@ -239,7 +267,11 @@ def main(argv):
         if isinstance(error, commands.errors.CheckFailure):
             await ctx.send("{} Sorry, you're not allowed to use this command.".format(ctx.author.mention))
         elif isinstance(error, commands.errors.CommandNotFound):
+            # NOTE: We delete the message to prevent users from getting around the non-command deletion rule
+            await ctx.message.delete()
             await ctx.send("{} Sorry, that command doesn't exist.".format(ctx.author.mention))
+        elif isinstance(error, commands.errors.MissingRequiredArgument):
+            await ctx.send("{} Command requires a parameter.".format(ctx.author.mention))
         else:
             logger.error(error)
 
