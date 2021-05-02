@@ -135,7 +135,7 @@ def main(argv):
         await list_fsas_for_user(ctx, conn, ctx.author.id)
 
     @bot.command(name="useradd", help="Run 'add' for the given user (ex: user1#1001).", usage="user1#1001 area1 area2 ...")
-    @commands.has_role("ppmod")
+    @commands.has_permissions(kick_members=True)
     async def ppuseradd(ctx, raw_username, *raw_fsas):
         try:
             # Validate username
@@ -149,7 +149,7 @@ def main(argv):
         await ctx.channel.send("{} User added to those areas.".format(ctx.author.mention))
 
     @bot.command(name="userdel", help="Run 'del' for the given user (ex: user1#1001).", usage="user1#1001 area1 area2 ...")
-    @commands.has_role("ppmod")
+    @commands.has_permissions(kick_members=True)
     async def ppuserdel(ctx, raw_username, *raw_fsas):
         try:
             # Validate username
@@ -163,7 +163,7 @@ def main(argv):
         await ctx.channel.send("{} User has been removed from those areas.".format(ctx.author.mention))
 
     @bot.command(name="userstop", help="Run 'stop' for the given user (ex: user1#1001).", usage="user1#1001")
-    @commands.has_role("ppmod")
+    @commands.has_permissions(kick_members=True)
     async def ppuserstop(ctx, raw_username):
         try:
             # Validate username
@@ -177,7 +177,7 @@ def main(argv):
         await ctx.channel.send("{} User has been purged from the list.".format(ctx.author.mention))
 
     @bot.command(name="userlist", help="Run 'list' for the given user (ex: user1#1001).", usage="user1#1001")
-    @commands.has_role("ppmod")
+    @commands.has_permissions(kick_members=True)
     async def ppuserlist(ctx, raw_username):
         # Validate username
         try:
@@ -189,7 +189,7 @@ def main(argv):
         await list_fsas_for_user(ctx, conn, user.id)
 
     @bot.command(name="send", help="Ping the given area codes (ex: K1P).", usage="area1 area2 ...")
-    @commands.has_role("ppmod")
+    @commands.has_permissions(kick_members=True)
     async def ppsend(ctx, *raw_fsas):
         if len(raw_fsas) < 1:
             await ctx.channel.send("{} Please provide an area code (ex: K1P).".format(ctx.author.mention))
@@ -227,7 +227,7 @@ def main(argv):
     @bot.event
     async def on_command_error(ctx, error):
         if isinstance(error, commands.errors.CheckFailure):
-            await ctx.send("{} Sorry, you don't have the correct role for this command.".format(ctx.author.mention))
+            await ctx.send("{} Sorry, you're not allowed to use this command.".format(ctx.author.mention))
         elif isinstance(error, commands.errors.CommandNotFound):
             await ctx.send("{} Sorry, that command doesn't exist.".format(ctx.author.mention))
         else:
