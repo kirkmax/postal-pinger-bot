@@ -64,11 +64,15 @@ def purge_user(user_id, conn):
 
 
 async def list_fsas_for_user(ctx, conn, user_id):
+    found_fsa = False
+
     with conn:
         with conn.cursor() as cur:
             fsas = []
             cur.execute("SELECT fsa FROM ping_reg WHERE user_id=%(user_id)s", {"user_id": str(user_id)})
             for row in cur:
+                found_fsa = True
+
                 fsas.append(row["fsa"].upper())
                 NUM_CHARS_PER_FSA = 4
                 MAX_USER_ID_LENGTH = 30
@@ -78,6 +82,8 @@ async def list_fsas_for_user(ctx, conn, user_id):
             if len(fsas):
                 await ctx.channel.send("{} {}".format(ctx.author.mention, ' '.join(fsas)))
                 fsas = []
+
+    return found_fsa
 
 
 def main(argv):
@@ -132,7 +138,9 @@ def main(argv):
 
     @bot.command(name="list", help="List my areas for pings.")
     async def pplist(ctx):
-        await list_fsas_for_user(ctx, conn, ctx.author.id)
+        found_fsa = await list_fsas_for_user(ctx, conn, ctx.author.id)
+        if not found_fsa:
+            await ctx.channel.send("{} You're not in the list.".format(ctx.author.mention))
 
     @bot.command(name="useradd", help="Run 'add' for the given user (ex: user1#1001).", usage="user1#1001 area1 area2 ...")
     @commands.has_permissions(kick_members=True)
@@ -186,7 +194,9 @@ def main(argv):
             await ctx.channel.send("{} {}".format(ctx.author.mention, str(ex)))
             return
 
-        await list_fsas_for_user(ctx, conn, user.id)
+        found_fsa = await list_fsas_for_user(ctx, conn, user.id)
+        if not found_fsa:
+            await ctx.channel.send("{} User not in list.".format(ctx.author.mention))
 
     @bot.command(name="send", help="Ping the given area codes (ex: K1P).", usage="area1 area2 ...")
     @commands.has_permissions(kick_members=True)
