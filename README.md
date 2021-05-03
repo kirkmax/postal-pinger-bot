@@ -33,3 +33,10 @@
     sudo systemctl start ppexportregs
     sudo systemctl enable ppexportregs
     ```
+
+# Bot Permissions
+- Text
+  - Send Messages
+  - Manage Messages
+  - Read Message History
+  
