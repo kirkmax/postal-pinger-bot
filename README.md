@@ -34,9 +34,11 @@
     sudo systemctl enable ppexportregs
     ```
 
-# Bot Permissions
+# Bot
+## Permissions
 - Text
   - Send Messages
   - Manage Messages
   - Read Message History
-  
+## Privileged Gateway Intents
+  - Server Members Intent
