@@ -281,10 +281,10 @@ def main(argv):
     @commands.has_permissions(kick_members=True)
     async def ppmodhelp(ctx):
         help_message = "```" \
-                       "!ppuseradd   (ex: !ppuseradd user1#1001 K1P)\n" \
-                       "!ppuserdel   (ex: !ppuserdel user1#1001 K1P)\n" \
-                       "!ppuserstop  (ex: !ppuserstop user1#1001)\n" \
-                       "!ppuserlist  (ex: !ppuserlist user1#1001)\n" \
+                       "!ppuseradd   (ex: !ppuseradd \"user1#1001\" K1P)\n" \
+                       "!ppuserdel   (ex: !ppuserdel \"user1#1001\" K1P)\n" \
+                       "!ppuserstop  (ex: !ppuserstop \"user1#1001\")\n" \
+                       "!ppuserlist  (ex: !ppuserlist \"user1#1001\")\n" \
                        "!ppmodhelp   Show this message.\n" \
                        "```"
 
