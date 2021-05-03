@@ -31,5 +31,5 @@
   
     sudo cp ppexportregs.service /etc/systemd/system/.
     sudo systemctl start ppexportregs
-    sudo systemctl enable ppexports
+    sudo systemctl enable ppexportregs
     ```
