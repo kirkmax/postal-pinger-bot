@@ -170,6 +170,21 @@ def main(argv):
         if not found_fsa:
             await ctx.channel.send("{} You're not in the list.".format(ctx.author.mention))
 
+    @bot.command(name="help", help="Show this message.")
+    async def pphelp(ctx):
+        help_message = "How to use PostalPinger? Use these commands:\n" \
+                       "```" \
+                       "  !ppadd   - Add me to pings for the given postal codes (ex: !ppadd K1P, or !ppadd K1P M2J etc.)\n" \
+                       "  !ppdel   - Delete me from pings for the given postal codes (ex: !ppdel K1P, or !ppdel K1P M2J etc.)\n" \
+                       "  !ppstop  - Stop the bot from pinging me. (Warning: This will REMOVE you from ALL pings.)\n" \
+                       "  !pplist  - List my postal codes for pings.\n" \
+                       "  !pphelp  - Shows this message.\n" \
+                       "```\n" \
+                       "Through Ping Bot, we'll do our best to ping you if there's relevant news announced in the high-risk postal code/s that you've signed " \
+                       "up for. Check pins! 📌 Ping is not 100% guaranteed, please continue to check pins until you've been vaccinated."
+
+        await ctx.channel.send(help_message)
+
     @bot.command(name="useradd", help="Run 'add' for the given user (ex: user1#1001).", usage="user1#1001 area1 area2 ...")
     @commands.has_permissions(kick_members=True)
     async def ppuseradd(ctx, raw_username, *raw_fsas):
@@ -261,6 +276,19 @@ def main(argv):
 
         if not found_users_to_ping:
             await ctx.channel.send("{} No one to ping.".format(ctx.author.mention))
+
+    @bot.command(name="modhelp", help="Show this message.")
+    @commands.has_permissions(kick_members=True)
+    async def ppmodhelp(ctx):
+        help_message = "```" \
+                       "!ppuseradd   (ex: !ppuseradd user1#1001 K1P)\n" \
+                       "!ppuserdel   (ex: !ppuserdel user1#1001 K1P)\n" \
+                       "!ppuserstop  (ex: !ppuserstop user1#1001)\n" \
+                       "!ppuserlist  (ex: !ppuserlist user1#1001)\n" \
+                       "!ppmodhelp   Show this message.\n" \
+                       "```"
+
+        await ctx.channel.send(help_message)
 
     @bot.event
     async def on_command_error(ctx, error):
