@@ -12,6 +12,11 @@ db_config:
 monitoring_interval: 60 # seconds
 export_output_dir: "..."
 
+delete_missing_users_interval:
+  hours: 24
+  minutes: 0
+  seconds: 0
+
 responses:
   user_help: |+
     How to use PostalPinger? Use these commands:

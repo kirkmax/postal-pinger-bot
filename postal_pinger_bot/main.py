@@ -1,7 +1,7 @@
 from .utils.general import db_init, get_unambiguous_username, parse_fsas, parse_username
 import argparse
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import logging
 import pathlib
 import psycopg2
@@ -87,6 +87,20 @@ async def list_fsas_for_user(ctx, conn, user_id):
     return found_fsa
 
 
+def find_missing_users(guilds, cur, missing_user_ids):
+    for row in cur:
+        user_id = row["user_id"]
+
+        # NOTE: This is inefficient if the bot is used for only one guild but helps when the same bot instance is used both in production and on a testing
+        #   server. Since it's an infrequent task, it's probably worth it overall.
+        user_exists = False
+        for guild in guilds:
+            if guild.get_member(int(user_id)) is not None:
+                user_exists = True
+        if not user_exists:
+            missing_user_ids.append(user_id)
+
+
 def main(argv):
     args_parser = argparse.ArgumentParser(description="Bot for pinging users in postal areas.")
     args_parser.add_argument("--config-path", help="Path to the config file.", required=True)
@@ -102,6 +116,7 @@ def main(argv):
 
     conn = db_init(config["db_config"])
     user_command_channel_name = config["user_command_channel"]
+    delete_missing_users_interval = config["delete_missing_users_interval"]
     responses = config["responses"]
 
     # Need the members intent to get users by username
@@ -285,6 +300,44 @@ def main(argv):
         else:
             logger.error(error)
 
+    @tasks.loop(hours=delete_missing_users_interval["hours"], minutes=delete_missing_users_interval["minutes"],
+                seconds=delete_missing_users_interval["seconds"])
+    async def remove_missing_users():
+        if not bot.is_ready():
+            # Wait until the bot is connected
+            return
+
+        try:
+            # Get users that are still missing
+            confirmed_missing_user_ids = []
+            with conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT user_id FROM ping_missing_reg")
+                    find_missing_users(bot.guilds, cur, confirmed_missing_user_ids)
+
+            # Remove missing users from ping_reg and clear ping_missing_reg table
+            with conn:
+                with conn.cursor() as cur:
+                    for user_id in confirmed_missing_user_ids:
+                        cur.execute("DELETE FROM ping_reg WHERE user_id = %s", (user_id,))
+                    cur.execute("DELETE FROM ping_missing_reg")
+
+            # Find currently missing users
+            missing_user_ids = []
+            with conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT DISTINCT user_id FROM ping_reg")
+                    find_missing_users(bot.guilds, cur, missing_user_ids)
+
+            # Save currently missing users
+            with conn:
+                with conn.cursor() as cur:
+                    for user_id in missing_user_ids:
+                        cur.execute("INSERT INTO ping_missing_reg VALUES (%s)", (user_id,))
+        except Exception:
+            logger.exception("Exception during remove_missing_users.")
+
+    remove_missing_users.start()
     bot.run(config["discord_token"])
 
 

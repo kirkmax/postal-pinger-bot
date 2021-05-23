@@ -20,11 +20,17 @@ def db_init(db_config):
                 "created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP",
                 "id BIGSERIAL"
             ]
-            # Create table
+            # Create ping_reg table
             cur.execute("CREATE TABLE IF NOT EXISTS ping_reg({})".format(", ".join(fields)))
 
             # Create unique index
             cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS user_and_fsa ON ping_reg (user_id, fsa)")
+
+            # Create ping_missing_reg table
+            fields = [
+                "user_id TEXT NOT NULL"
+            ]
+            cur.execute("CREATE TABLE IF NOT EXISTS ping_missing_reg({})".format(", ".join(fields)))
 
     return conn
 
