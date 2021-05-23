@@ -25,7 +25,7 @@ responses:
       !ppstop  - Stop the bot from pinging me. (Warning: This will REMOVE you from ALL pings.)
       !pplist  - List my postal codes for pings.
       !pphelp  - Shows this message.```
-    Through PostalPinger, we'll do our best to ping you if there's relevant news announced in the high-risk postal code/s that you've signed up for. Check pins! 📌 Ping is not 100% guaranteed, please continue to check pins until you've been vaccinated.
+    Through PostalPinger, we'll do our best to ping you if there's relevant news announced in the postal code/s that you've signed up for. Check pins of your respective neighborhood channel! 📌 Ping is not 100% guaranteed, please continue to check pins until you've been vaccinated.
 
   mod_help: |+
     ```!ppuseradd   (ex: !ppuseradd "user1#1001" K1P)
