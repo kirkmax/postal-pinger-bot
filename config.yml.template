@@ -11,3 +11,20 @@ db_config:
 
 monitoring_interval: 60 # seconds
 export_output_dir: "..."
+
+responses:
+  user_help: |+
+    How to use PostalPinger? Use these commands:
+    ```  !ppadd   - Add me to pings for the given postal codes (ex: !ppadd K1P, or !ppadd K1P M2J etc.)
+      !ppdel   - Delete me from pings for the given postal codes (ex: !ppdel K1P, or !ppdel K1P M2J etc.)
+      !ppstop  - Stop the bot from pinging me. (Warning: This will REMOVE you from ALL pings.)
+      !pplist  - List my postal codes for pings.
+      !pphelp  - Shows this message.```
+    Through PostalPinger, we'll do our best to ping you if there's relevant news announced in the high-risk postal code/s that you've signed up for. Check pins! 📌 Ping is not 100% guaranteed, please continue to check pins until you've been vaccinated.
+
+  mod_help: |+
+    ```!ppuseradd   (ex: !ppuseradd "user1#1001" K1P)
+    !ppuserdel   (ex: !ppuserdel "user1#1001" K1P)
+    !ppuserstop  (ex: !ppuserstop "user1#1001")
+    !ppuserlist  (ex: !ppuserlist "user1#1001")
+    !ppmodhelp   Show this message.```
