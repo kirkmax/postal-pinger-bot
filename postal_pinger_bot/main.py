@@ -1,5 +1,6 @@
 from .utils.general import db_init, get_unambiguous_username, parse_fsas, parse_username
 import argparse
+import asyncio
 import discord
 from discord.ext import commands, tasks
 import logging
@@ -24,6 +25,8 @@ DISCORD_MESSAGE_LENGTH_LIMIT = 2000
 DISCORD_MESSAGE_LENGTH_HIGH_WATERMARK = DISCORD_MESSAGE_LENGTH_LIMIT - 500
 # NOTE: Each FSA takes at 3 characters + 1 space in the message, so this is meant to be a value that doesn't overwhelm the message with FSAs
 MAX_FSAS_TO_PING_AT_ONCE = 100
+# NOTE: 100 is the library limit
+MAX_USERS_TO_QUERY_AT_ONCE = 100
 
 
 def add_user_to_fsas(user, raw_fsas, conn):
@@ -87,18 +90,24 @@ async def list_fsas_for_user(ctx, conn, user_id):
     return found_fsa
 
 
-def find_missing_users(guilds, cur, missing_user_ids):
-    for row in cur:
-        user_id = row["user_id"]
+async def check_if_users_exist(guild: discord.guild.Guild, user_ids, missing_user_ids):
+    found_users = await guild.query_members(user_ids=user_ids, limit=MAX_USERS_TO_QUERY_AT_ONCE, cache=False)
+    new_missing_ids = set(user_ids).difference([u.id for u in found_users])
+    missing_user_ids.update(new_missing_ids)
 
-        # NOTE: This is inefficient if the bot is used for only one guild but helps when the same bot instance is used both in production and on a testing
-        #   server. Since it's an infrequent task, it's probably worth it overall.
-        user_exists = False
-        for guild in guilds:
-            if guild.get_member(int(user_id)) is not None:
-                user_exists = True
-        if not user_exists:
-            missing_user_ids.append(user_id)
+
+async def find_missing_users(guild: discord.guild.Guild, cur, missing_user_ids: set):
+    user_ids = []
+    for row in cur:
+        if len(user_ids) == MAX_USERS_TO_QUERY_AT_ONCE:
+            await check_if_users_exist(guild, user_ids, missing_user_ids)
+
+            user_ids = []
+
+        user_ids.append(int(row["user_id"]))
+
+    if len(user_ids) > 0:
+        await check_if_users_exist(guild, user_ids, missing_user_ids)
 
 
 def main(argv):
@@ -115,6 +124,7 @@ def main(argv):
         raise Exception("Unable to parse configuration from {}.".format(config_path))
 
     conn = db_init(config["db_config"])
+    guild_id = config["guild_id"]
     user_command_channel_name = config["user_command_channel"]
     delete_missing_users_interval = config["delete_missing_users_interval"]
     responses = config["responses"]
@@ -307,33 +317,46 @@ def main(argv):
             # Wait until the bot is connected
             return
 
+        guild = await bot.fetch_guild(guild_id)
+        if guild is None:
+            logger.warning("Guild with ID {} not found".format(guild_id))
+            return
+
         try:
             # Get users that are still missing
-            confirmed_missing_user_ids = []
+            confirmed_missing_user_ids = set()
             with conn:
                 with conn.cursor() as cur:
                     cur.execute("SELECT user_id FROM ping_missing_reg")
-                    find_missing_users(bot.guilds, cur, confirmed_missing_user_ids)
+                    try:
+                        await find_missing_users(guild, cur, confirmed_missing_user_ids)
+                    except asyncio.TimeoutError:
+                        # Not a critical error, so just log it
+                        logger.warning("Timed out while waiting for server to confirm missing IDs.")
 
             # Remove missing users from ping_reg and clear ping_missing_reg table
             with conn:
                 with conn.cursor() as cur:
                     for user_id in confirmed_missing_user_ids:
-                        cur.execute("DELETE FROM ping_reg WHERE user_id = %s", (user_id,))
+                        cur.execute("DELETE FROM ping_reg WHERE user_id = %s", (str(user_id),))
                     cur.execute("DELETE FROM ping_missing_reg")
 
             # Find currently missing users
-            missing_user_ids = []
+            missing_user_ids = set()
             with conn:
                 with conn.cursor() as cur:
                     cur.execute("SELECT DISTINCT user_id FROM ping_reg")
-                    find_missing_users(bot.guilds, cur, missing_user_ids)
+                    try:
+                        await find_missing_users(guild, cur, missing_user_ids)
+                    except asyncio.TimeoutError:
+                        # Not a critical error, so just log it
+                        logger.warning("Timed out while waiting for server to check for user IDs.")
 
             # Save currently missing users
             with conn:
                 with conn.cursor() as cur:
                     for user_id in missing_user_ids:
-                        cur.execute("INSERT INTO ping_missing_reg VALUES (%s)", (user_id,))
+                        cur.execute("INSERT INTO ping_missing_reg VALUES (%s)", (str(user_id),))
         except Exception:
             logger.exception("Exception during remove_missing_users.")
 
